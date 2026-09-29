@@ -1,0 +1,47 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: eder-informatica-app:latest
+    container_name: eder_app
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: eder_informatica
+      DB_USER: eder
+      DB_PASS: eder123
+      APP_NAME: "Eder Informática"
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: eder_db
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: eder_informatica
+      MYSQL_USER: eder
+      MYSQL_PASSWORD: eder123
+      TZ: America/Sao_Paulo
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  db_data:
